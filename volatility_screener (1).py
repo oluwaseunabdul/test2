@@ -1,4 +1,3 @@
-
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -65,17 +64,22 @@ def is_compressed(df, bb_period=20, bb_std=2):
         return False
 
     try:
-        bb = ta.volatility.BollingerBands(close=df['Close'], window=bb_period, window_dev=bb_std)
+        # Ensure 'Close' is a Series, not a DataFrame or 2D array
+        close_series = df['Close']
+        if isinstance(close_series, pd.DataFrame):
+            close_series = close_series.squeeze()
+        bb = ta.volatility.BollingerBands(close=close_series, window=bb_period, window_dev=bb_std)
         hband = bb.bollinger_hband()
         lband = bb.bollinger_lband()
         width = hband - lband
-        width_pct = width / df['Close']
+        width_pct = width / close_series
 
         if width_pct.isnull().all():
             return False
 
         return width_pct.iloc[-1] < width_pct.quantile(0.15)
-    except:
+    except Exception as e:
+        print("Error in is_compressed:", e)
         return False
 
 # ========== Chart Pattern Detection ==========
