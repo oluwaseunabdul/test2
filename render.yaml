@@ -1,0 +1,42 @@
+services:
+  # Backend API Service
+  - type: web
+    name: research-backend
+    env: python
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: research-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: AI_MODE
+        value: local
+      - key: CORS_ORIGINS
+        value: '["https://research-platform.onrender.com","http://localhost:5173"]'
+      - key: PORT
+        value: 8000
+
+  # Frontend Static Site
+  - type: web
+    name: research-frontend
+    env: static
+    region: oregon
+    plan: free
+    rootDir: frontend
+    buildCommand: "npm install && npm run build"
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://research-backend.onrender.com/api/v1
+
+databases:
+  - name: research-db
+    databaseName: research_platform
+    user: research_user
+    plan: free
